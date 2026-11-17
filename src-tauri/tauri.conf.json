@@ -31,7 +31,7 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM3MkQwQUYzQTg0NDI4MTkKUldRWktFU284d290TjJyUGUwTlRrZlhJb0hOSW9KLzgzbGxDd0Z2Vm9STExCODZyWVFjN2ZnK0gK",
-      "endpoints": ["https://github.com/maciej-trebacz/ff7-landscaper/releases/latest/download/updater.json"],
+      "endpoints": ["https://github.com/julianxhokaxhiu/ff7-landscaper/releases/latest/download/updater.json"],
       "windows": {
         "installMode": "passive"
       }

@@ -11,6 +11,11 @@ Claude will update this file after finishing tasks as necessary to include new k
 - `npm run tauri build` - Build desktop application
 - `npm test` - Run Vitest unit tests
 
+### CI and Releases
+- `.github/workflows/build-release.yml` tests and builds unsigned Windows x64 NSIS installers; matching `X.Y.Z` or `vX.Y.Z` tags publish releases immediately.
+- CI checks out a pinned commit of public `maciej-trebacz/ff7-lib.rs` as sibling `ff7-lib`, preserving the existing Rust path dependency without extra secrets.
+- CI disables updater artifact generation and does not publish `updater.json`; its installers currently require manual updates.
+
 ### UI Components
 - `npx shadcn@latest add <component>` - Add new shadcn-ui components
 - Check `components.json` before installing to avoid duplicates
