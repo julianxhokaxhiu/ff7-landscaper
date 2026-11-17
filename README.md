@@ -4,6 +4,13 @@ This is a world map editor for Final Fantasy VII PC. It allows you to edit the w
 
 [![Screenshot](https://raw.githubusercontent.com/maciej-trebacz/ff7-landscaper/main/landscaper-1.0-screenshot.png)](https://raw.githubusercontent.com/maciej-trebacz/ff7-landscaper/main/landscaper-1.0-screenshot.png)
 
+## Platform support
+
+All platforms can edit Final Fantasy VII PC game files.
+
+- **Windows:** Can also connect to the running game to sync messages and show live model positions.
+- **macOS and Linux:** File editing only; live-game integration is unavailable, including through Wine.
+
 ## Having issues? Want other features?
 
 You can file issues directly using the [Issues](https://github.com/maciej-trebacz/ff7-landscaper/issues) tab if you have a GitHub account. Otherwise, you can also join my Discord server: [https://discord.gg/YyecaMa7Wf](https://discord.gg/YyecaMa7Wf).
@@ -51,10 +58,6 @@ published library does not build on macOS or Linux. CI follows the fork's
 `main` branch until the change is published; replace `ref: main` with its commit
 SHA afterwards to make builds reproducible. No dependency variables or extra
 tokens are required.
-
-File editing and battle-scene parsing are available on all three platforms.
-Live-game integration, including message synchronization and the model overlay,
-is Windows-only; Wine process integration is not supported.
 
 The workflow uses the automatic `GITHUB_TOKEN` with `contents: write` only in
 the release job; no release PAT is needed.
