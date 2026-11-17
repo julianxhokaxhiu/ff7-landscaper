@@ -7,6 +7,7 @@ interface AppState {
   opened: boolean
   openedTime: number
   connected: boolean
+  liveGameSupported: boolean | null
   loading: boolean
   loadingStep: string
   currentTab: string
@@ -23,6 +24,7 @@ const appStateAtom = atom<AppState>({
   opened: false,
   openedTime: 0,
   connected: false,
+  liveGameSupported: null,
   loading: false,
   loadingStep: '',
   currentTab: 'messages',
@@ -100,14 +102,18 @@ export function useAppState() {
   }
 
   useEffect(() => {
-    // Check connection immediately
-    checkConnection()
-
-    // Then check every 2 seconds
-    const interval = setInterval(checkConnection, 2000)
-
-    return () => clearInterval(interval)
+    if (state.liveGameSupported !== null) return
+    invoke<boolean>('is_live_game_supported')
+      .then(supported => setState(prev => ({ ...prev, liveGameSupported: supported })))
+      .catch(error => console.error('Failed to check live game support:', error))
   }, [])
+
+  useEffect(() => {
+    if (!state.liveGameSupported) return
+    checkConnection()
+    const interval = setInterval(checkConnection, 2000)
+    return () => clearInterval(interval)
+  }, [state.liveGameSupported])
 
   return {
     ...state,

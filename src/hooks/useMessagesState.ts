@@ -21,11 +21,12 @@ export function useMessagesState() {
   const [state, setState] = useAtom(messagesStateAtom)
   const { setMessage } = useStatusBar()
   const { getFile, setFile } = useLgpState()
-  const { markUnsavedChanges, clearUnsavedChanges } = useAppState()
+  const { markUnsavedChanges, clearUnsavedChanges, liveGameSupported } = useAppState()
   const timeoutRef = React.useRef<number>()
 
   const debouncedSync = React.useMemo(
     () => debounce(async (messages: string[]) => {
+      if (!liveGameSupported) return
       try {
         await syncMessages(messages)
       } catch (error) {
@@ -41,7 +42,7 @@ export function useMessagesState() {
         setMessage('')
       }, 2000)
     }, 500),
-    []
+    [liveGameSupported]
   )
 
   const loadMessages = async () => {

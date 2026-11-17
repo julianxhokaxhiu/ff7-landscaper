@@ -3,6 +3,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { GameModule, WorldModel } from "./types";
+import { useAppState } from "./useAppState";
 
 const defaultState = {
     currentModule: 0,
@@ -15,8 +16,10 @@ const defaultState = {
 export const useFF7State = function() {
   const [connected, setConnected] = useState(false);
   const [gameState, setGameState] = useState(defaultState);
+  const { liveGameSupported } = useAppState();
 
   useEffect(() => {
+    if (!liveGameSupported) return;
     const updateGameState = async () => {
       try {
         const ff7Data: any = await invoke("read_ff7_data");
@@ -47,7 +50,7 @@ export const useFF7State = function() {
 
     // Clean up the interval on component unmount
     return () => clearInterval(intervalId);
-  }, []);
+  }, [liveGameSupported]);
 
   return {
     connected,

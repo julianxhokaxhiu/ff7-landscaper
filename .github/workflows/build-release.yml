@@ -16,8 +16,35 @@ concurrency:
 
 jobs:
   build:
-    name: Windows x64
-    runs-on: windows-latest
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-latest
+            id: windows-x64
+            target: x86_64-pc-windows-msvc
+            rust-targets: x86_64-pc-windows-msvc
+            bundle: nsis
+            artifact-path: landscaper/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+          - name: macOS universal
+            os: macos-latest
+            id: macos-universal
+            target: universal-apple-darwin
+            test-target: aarch64-apple-darwin
+            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
+            bundle: dmg
+            artifact-path: landscaper/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          - name: Linux x64
+            os: ubuntu-22.04
+            id: linux-x64
+            target: x86_64-unknown-linux-gnu
+            test-target: x86_64-unknown-linux-gnu
+            rust-targets: x86_64-unknown-linux-gnu
+            bundle: appimage
+            artifact-path: landscaper/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
     defaults:
       run:
         shell: pwsh
@@ -49,8 +76,8 @@ jobs:
       - name: Check out sibling Rust dependency
         uses: actions/checkout@v4
         with:
-          repository: maciej-trebacz/ff7-lib.rs
-          ref: da8c7dcea110d21641daebe05c0a017d3a18103d
+          repository: julianxhokaxhiu/ff7-lib.rs
+          ref: main
           path: ff7-lib
           persist-credentials: false
 
@@ -59,17 +86,25 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: landscaper\package-lock.json
+          cache-dependency-path: landscaper/package-lock.json
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libfuse2 patchelf xdg-utils
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-pc-windows-msvc
+          targets: ${{ matrix.rust-targets }}
 
       - name: Cache Rust dependencies and build artifacts
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: landscaper\src-tauri -> target
+          key: ${{ matrix.id }}
+          workspaces: landscaper/src-tauri -> target
 
       - name: Install frontend dependencies
         run: npm ci
@@ -77,32 +112,44 @@ jobs:
       - name: Run unit tests
         run: npm test
 
-      - name: Build unsigned Windows installer
+      - name: Build installer
+        env:
+          BUILD_TARGET: ${{ matrix.target }}
+          BUNDLE: ${{ matrix.bundle }}
+          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && '-' || '' }}
+          APPIMAGE_EXTRACT_AND_RUN: ${{ runner.os == 'Linux' && '1' || '' }}
         run: |
           $config = Join-Path $env:RUNNER_TEMP 'tauri-ci.conf.json'
           '{"bundle":{"createUpdaterArtifacts":false}}' | Set-Content -Path $config -Encoding utf8
-          npm run tauri build -- --ci --target x86_64-pc-windows-msvc --config $config -- --locked
+          npm run tauri build -- --ci --target $env:BUILD_TARGET --bundles $env:BUNDLE --config $config -- --locked
 
-      - name: Upload Windows installer
+      - name: Test unsupported live-game commands
+        if: runner.os != 'Windows'
+        env:
+          TEST_TARGET: ${{ matrix.test-target }}
+        run: cargo test --locked --release --target $env:TEST_TARGET --manifest-path src-tauri/Cargo.toml non_windows_live_game_commands
+
+      - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: windows-x64-installer
-          path: landscaper\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\*.exe
+          name: ${{ matrix.id }}-installer
+          path: ${{ matrix.artifact-path }}
           if-no-files-found: error
 
   release:
     name: Publish GitHub release
     if: startsWith(github.ref, 'refs/tags/')
     needs: build
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download Windows installer
+      - name: Download installers
         uses: actions/download-artifact@v4
         with:
-          name: windows-x64-installer
+          pattern: '*-installer'
           path: installers
+          merge-multiple: true
 
       - name: Publish release
         shell: pwsh
@@ -111,8 +158,10 @@ jobs:
           GH_REPO: ${{ github.repository }}
           TAG_NAME: ${{ github.ref_name }}
         run: |
-          $installers = @(Get-ChildItem installers -Filter *.exe -File)
-          if ($installers.Count -eq 0) {
-            throw 'No Windows installers were downloaded.'
+          foreach ($extension in @('.exe', '.dmg', '.AppImage')) {
+            if (-not (Get-ChildItem installers -File | Where-Object Extension -eq $extension)) {
+              throw "No $extension installer was downloaded."
+            }
           }
+          $installers = @(Get-ChildItem installers -File)
           gh release create $env:TAG_NAME @($installers.FullName) --verify-tag --title "FF7 Landscaper $env:TAG_NAME" --generate-notes

@@ -12,9 +12,10 @@ Claude will update this file after finishing tasks as necessary to include new k
 - `npm test` - Run Vitest unit tests
 
 ### CI and Releases
-- `.github/workflows/build-release.yml` tests and builds unsigned Windows x64 NSIS installers; matching `X.Y.Z` or `vX.Y.Z` tags publish releases immediately.
-- CI checks out a pinned commit of public `maciej-trebacz/ff7-lib.rs` as sibling `ff7-lib`, preserving the existing Rust path dependency without extra secrets.
+- `.github/workflows/build-release.yml` builds Windows x64 NSIS, universal macOS DMG, and Linux x64 AppImages; macOS uses ad-hoc signing and matching `X.Y.Z` or `vX.Y.Z` tags publish releases after all builds succeed.
+- CI checks out `julianxhokaxhiu/ff7-lib.rs` as sibling `ff7-lib`. Its portability changes must be pushed before macOS/Linux builds work; pin the workflow to the resulting commit for reproducible builds.
 - CI disables updater artifact generation and does not publish `updater.json`; its installers currently require manual updates.
+- Live-game memory integration is Windows-only; file editing and battle-scene parsing are cross-platform.
 
 ### UI Components
 - `npx shadcn@latest add <component>` - Add new shadcn-ui components

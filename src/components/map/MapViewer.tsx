@@ -11,6 +11,7 @@ import { CameraDebugInfo, CameraDebugOverlay } from './components/DebugOverlay';
 import { MapControls } from './components/MapControls';
 import { WorldMesh } from './components/WorldMesh';
 import { useMaps, MapType, MapMode, dimensions, MESHES_IN_ROW, MESHES_IN_COLUMN } from '@/hooks/useMaps';
+import { useAppState } from '@/hooks/useAppState';
 import ModelOverlay from './ModelOverlay';
 
 interface MapViewerProps { 
@@ -58,6 +59,7 @@ function MapViewer({
   const perspectiveCameraRef = useRef<ThreePerspectiveCamera>(null);
   const orthographicCameraRef = useRef<ThreeOrthographicCamera>(null);
   const { worldmap, mapType, mapId, mode, setSelectedTriangle } = useMaps();
+  const { liveGameSupported } = useAppState();
   const zoomRef = useRef(1);
   const currentCameraRef = useRef<ThreePerspectiveCamera | ThreeOrthographicCamera | null>(null);
   const updateWireframeOpacityRef = useRef<((cameraHeight: number) => void) | null>(null);
@@ -343,7 +345,7 @@ function MapViewer({
         showGrid={showGrid}
         onGridToggle={onGridToggle}
         showModels={showModels}
-        onModelsToggle={() => setShowModels(prev => !prev)}
+        onModelsToggle={liveGameSupported ? () => setShowModels(prev => !prev) : undefined}
         showNormals={showNormals}
         onNormalsToggle={onNormalsToggle}
         renderingMode={localRenderingMode}
@@ -437,7 +439,7 @@ function MapViewer({
               onWireframeOpacityUpdate={handleWireframeOpacityUpdate}
             />
           )}
-          {showModels && <ModelOverlay zoomRef={zoomRef} />}
+          {liveGameSupported && showModels && <ModelOverlay zoomRef={zoomRef} />}
         </Canvas>
         {SHOW_DEBUG && <CameraDebugOverlay debugInfo={debugInfo} />}
       </div>

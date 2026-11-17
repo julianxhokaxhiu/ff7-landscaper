@@ -17,7 +17,7 @@ type UpdateInfo = {
 
 export function StatusBar() {
   const { message, isError } = useStatusBar();
-  const { connected } = useAppState();
+  const { connected, liveGameSupported } = useAppState();
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState<UpdateInfo | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -62,7 +62,7 @@ export function StatusBar() {
               "h-[7px] w-[7px] rounded-full mr-1.5 "
             )}
           ></div>
-          Game {connected ? "connected" : "disconnected"}
+          {liveGameSupported === false ? "Live game integration unavailable" : `Game ${connected ? "connected" : "disconnected"}`}
         </div>
         <div className="h-4 w-px bg-zinc-600"></div>
         <div className={cn(isError ? "text-red-400" : "text-zinc-400")}>

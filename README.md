@@ -35,17 +35,26 @@ Or come and chat with me [live on Twitch](https://twitch.tv/m4v3k) where I often
 ## CI builds and releases
 
 The [Build and release workflow](.github/workflows/build-release.yml) tests and
-builds a Windows x64 NSIS installer on GitHub's `windows-latest` runner on pull
-requests, pushes to `main`, and manual workflow runs. Download the installer from the run's `windows-x64-installer`
-artifact. Pushing an `X.Y.Z` or `vX.Y.Z` tag also publishes a GitHub release
-immediately, with generated release notes and the installer attached.
+builds Windows x64 NSIS, macOS universal (Apple Silicon and Intel) DMG, and
+Linux x64 AppImages on pull requests, pushes to `main`, and manual runs.
+Download them from the run's `windows-x64-installer`, `macos-universal-installer`,
+and `linux-x64-installer` artifacts. Pushing an `X.Y.Z` or `vX.Y.Z` tag publishes
+a GitHub release with all three packages and generated release notes after
+every build succeeds.
 
 The existing Rust dependency is a local path (`../../ff7-lib` relative to
 `src-tauri`), so CI checks out
-[maciej-trebacz/ff7-lib.rs](https://github.com/maciej-trebacz/ff7-lib.rs) alongside
-this repository as `ff7-lib`. Its commit is pinned in the workflow for
-reproducible builds; update that pin deliberately when upgrading the dependency.
-No dependency variables or extra tokens are required.
+[julianxhokaxhiu/ff7-lib.rs](https://github.com/julianxhokaxhiu/ff7-lib.rs)
+alongside this repository as `ff7-lib`. **Commit and push the accompanying
+portability changes in that fork before running this workflow**; the currently
+published library does not build on macOS or Linux. CI follows the fork's
+`main` branch until the change is published; replace `ref: main` with its commit
+SHA afterwards to make builds reproducible. No dependency variables or extra
+tokens are required.
+
+File editing and battle-scene parsing are available on all three platforms.
+Live-game integration, including message synchronization and the model overlay,
+is Windows-only; Wine process integration is not supported.
 
 The workflow uses the automatic `GITHUB_TOKEN` with `contents: write` only in
 the release job; no release PAT is needed.
@@ -69,7 +78,7 @@ later runs reuse it when compatible with the Rust toolchain and dependencies.
    ```
 
 CI rejects tags whose version does not match all three manifests. Running the
-workflow manually on a branch builds an artifact without publishing a release.
+workflow manually on a branch builds artifacts without publishing a release.
 The existing interactive [release.ps1](release.ps1) is a separate, local signed
 release process and is not used by CI.
 
@@ -77,7 +86,10 @@ release process and is not used by CI.
 
 CI intentionally disables Tauri updater artifact generation for its builds,
 so no signing secrets are required. Installers are unsigned, may trigger
-Windows SmartScreen warnings, and must be installed manually. CI does not
+Windows SmartScreen warnings, and must be installed manually. macOS packages
+are ad-hoc signed but not notarized and will require Gatekeeper approval. The Linux
+AppImage targets x64 systems and is built on Ubuntu 22.04 for compatibility;
+make it executable before running it (`chmod +x <filename>.AppImage`). CI does not
 upload the checked-in [updater.json](updater.json), since it describes an older
 signed upstream release.
 
